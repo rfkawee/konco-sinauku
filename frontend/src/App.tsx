@@ -3,6 +3,8 @@ import { MessageSquare, FileText, Award, PanelLeftClose, PanelLeftOpen, Loader2 
 import { Navbar } from './components/Navbar';
 import { LandingPage } from './components/LandingPage';
 import { AuthModal } from './components/AuthModal';
+import { DashboardModal } from './components/DashboardModal';
+import { SettingsModal } from './components/SettingsModal';
 import { DocumentSidebar } from './components/DocumentSidebar';
 import { PDFViewerPanel } from './components/PDFViewerPanel';
 import { ChatModule } from './components/ChatModule';
@@ -23,6 +25,8 @@ export const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authNotice, setAuthNotice] = useState<string | null>(null);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   // Ambil email & Member ID dari localStorage agar sesi tidak hilang saat refresh
   const [userEmail, setUserEmail] = useState<string | null>(() => {
@@ -218,17 +222,22 @@ export const App: React.FC = () => {
             onOpenWorkspace={handleOpenWorkspace}
             onFileSelectedPreAuth={handleFileSelectedPreAuth}
             isAutoUploading={isAutoUploading}
+            onOpenDashboard={() => setIsDashboardOpen(true)}
+            onOpenSettings={() => setIsSettingsOpen(true)}
           />
         </div>
       ) : (
         <>
-          {/* Navbar Workspace (Tombol Login ditiadakan sesuai spesifikasi; ada tombol navigasi kembali ke Landing) */}
+          {/* Navbar Workspace */}
           <Navbar
             activeDoc={activeDoc}
             userEmail={userEmail}
             memberId={memberId}
+            documentsCount={documents.length}
             onLogout={handleLogout}
             onBackToLanding={() => setView('landing')}
+            onOpenDashboard={() => setIsDashboardOpen(true)}
+            onOpenSettings={() => setIsSettingsOpen(true)}
           />
 
           {/* Main Workspace Layout */}
@@ -346,6 +355,29 @@ export const App: React.FC = () => {
           setAutoUploadFileName('');
         }}
         onSuccess={handleAuthSuccess}
+      />
+
+      {/* Modal Dashboard Belajar */}
+      <DashboardModal
+        isOpen={isDashboardOpen}
+        onClose={() => setIsDashboardOpen(false)}
+        userEmail={userEmail}
+        memberId={memberId}
+        documents={documents}
+        onSelectDocAndOpenWorkspace={(doc) => {
+          setIsDashboardOpen(false);
+          setActiveDoc(doc);
+          setCurrentPage(1);
+          setView('workspace');
+        }}
+      />
+
+      {/* Modal Pengaturan (Settings) */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        userEmail={userEmail}
+        memberId={memberId}
       />
 
       {/* Overlay Status Upload Otomatis Pasca-Login */}

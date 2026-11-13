@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import type { DocumentItem } from '../types';
 import { uploadDocument } from '../lib/api';
+import { ProfileDropdown } from './ProfileDropdown';
 
 interface LandingPageProps {
   userEmail: string | null;
@@ -16,6 +17,8 @@ interface LandingPageProps {
   onOpenWorkspace: (doc?: DocumentItem) => void;
   onFileSelectedPreAuth: (file: File) => void;
   isAutoUploading?: boolean;
+  onOpenDashboard?: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
@@ -28,6 +31,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onOpenWorkspace,
   onFileSelectedPreAuth,
   isAutoUploading = false,
+  onOpenDashboard,
+  onOpenSettings,
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -119,34 +124,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {/* Tombol Login / Info Akun di Landing Page */}
         <div className="flex items-center gap-3">
           {userEmail ? (
-            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-xl shadow-2xs">
-              <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
-                {userEmail.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex flex-col text-left hidden sm:flex">
-                <span className="text-slate-700 font-semibold text-xs leading-none">{userEmail}</span>
-                {memberId && (
-                  <span className="text-[10px] text-blue-700 font-mono font-bold mt-0.5">
-                    ID: {memberId}
-                  </span>
-                )}
-              </div>
-              {documents.length > 0 && (
-                <button
-                  onClick={() => onOpenWorkspace()}
-                  className="flex items-center gap-1 px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition cursor-pointer"
-                >
-                  <span>Buka Workspace</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              )}
-              <button
-                onClick={onLogout}
-                className="text-xs text-rose-600 hover:text-rose-700 font-medium ml-1 cursor-pointer"
-              >
-                Keluar
-              </button>
-            </div>
+            <ProfileDropdown
+              userEmail={userEmail}
+              memberId={memberId || 'MBR-GUEST'}
+              documentsCount={documents.length}
+              onOpenDashboard={onOpenDashboard || (() => {})}
+              onOpenSettings={onOpenSettings || (() => {})}
+              onLogout={onLogout}
+              onOpenWorkspace={() => onOpenWorkspace()}
+              isWorkspace={false}
+            />
           ) : (
             <button
               onClick={() => onOpenAuth()}

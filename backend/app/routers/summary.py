@@ -45,27 +45,23 @@ Format JSON Wajib:
   "key_points": ["Poin 1...", "Poin 2...", "Poin 3..."],
   "glossary": {{"Istilah 1": "Definisi...", "Istilah 2": "Definisi..."}}
 }}"""
-            model = None
-            for candidate in ["gemini-3.8-flash", "gemini-flash-latest"]:
+            for candidate in ["gemini-3.8-flash", "gemini-flash-latest", "gemini-2.0-flash"]:
                 try:
                     model = genai.GenerativeModel(candidate)
-                    break
-                except Exception:
+                    res = model.generate_content(
+                        prompt,
+                        generation_config={"response_mime_type": "application/json"}
+                    )
+                    data = json.loads(res.text)
+                    return SummaryResponse(
+                        document_id=req.document_id,
+                        executive_summary=data.get("executive_summary", ""),
+                        key_points=data.get("key_points", []),
+                        glossary=data.get("glossary", {})
+                    )
+                except Exception as e:
+                    logger.warning(f"Candidate {candidate} gagal untuk summary: {e}")
                     continue
-            if not model:
-                model = genai.GenerativeModel("gemini-3.8-flash")
-
-            res = model.generate_content(
-                prompt,
-                generation_config={"response_mime_type": "application/json"}
-            )
-            data = json.loads(res.text)
-            return SummaryResponse(
-                document_id=req.document_id,
-                executive_summary=data.get("executive_summary", ""),
-                key_points=data.get("key_points", []),
-                glossary=data.get("glossary", {})
-            )
         except Exception as e:
             logger.error(f"Error memanggil Gemini summary: {e}")
 

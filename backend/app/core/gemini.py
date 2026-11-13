@@ -77,29 +77,24 @@ Pertanyaan Siswa: {question}
 Instruksi: Berikan jawaban akademis formal yang tepat, ringkas, dan sertakan sitasi [Halaman X] untuk fakta yang bersangkutan."""
 
     if genai_available and settings.GEMINI_API_KEY:
-        try:
-            import google.generativeai as genai
-            model = None
-            for candidate in ["gemini-3.8-flash", "gemini-flash-latest"]:
-                try:
-                    model = genai.GenerativeModel(
-                        model_name=candidate,
-                        system_instruction=SYSTEM_TUTOR_PROMPT
-                    )
-                    break
-                except Exception:
-                    continue
-            if not model:
-                model = genai.GenerativeModel("gemini-3.8-flash", system_instruction=SYSTEM_TUTOR_PROMPT)
-
-            response = model.generate_content(prompt, stream=True)
-            for chunk in response:
-                if chunk.text:
-                    yield chunk.text
-            return
-        except Exception as e:
-            logger.error(f"Error pada Gemini Chat Stream: {e}")
-            yield f"\n[Catatan Sistem: Terjadi kendala koneksi ke Gemini API: {str(e)}]\n"
+        for candidate in ["gemini-3.8-flash", "gemini-flash-latest", "gemini-2.0-flash"]:
+            try:
+                import google.generativeai as genai
+                model = genai.GenerativeModel(
+                    model_name=candidate,
+                    system_instruction=SYSTEM_TUTOR_PROMPT
+                )
+                response = model.generate_content(prompt, stream=True)
+                has_yielded = False
+                for chunk in response:
+                    if chunk.text:
+                        has_yielded = True
+                        yield chunk.text
+                if has_yielded:
+                    return
+            except Exception as e:
+                logger.warning(f"Model {candidate} gagal untuk chat: {e}, mencoba kandidat berikutnya...")
+                continue
 
     # Dev fallback streaming jika API key belum diisi
     yield f"Berdasarkan analisis materi pada dokumen:\n\n"
@@ -124,9 +119,7 @@ def generate_structured_quiz(
     ])
 
     if genai_available and settings.GEMINI_API_KEY:
-        try:
-            import google.generativeai as genai
-            prompt = f"""Buatkan {num_questions} butir soal pilihan ganda akademis berdasarkan materi berikut:
+        prompt = f"""Buatkan {num_questions} butir soal pilihan ganda akademis berdasarkan materi berikut:
 Topik: {topic}
 
 Konteks Dokumen:
@@ -138,27 +131,22 @@ Aturan Kuis:
 3. Berikan analisis akademis mendalam mengapa jawaban tersebut benar dan mengapa opsi lain salah.
 4. Tulis nomor halaman rujukan dokumen yang valid."""
 
-            model = None
-            for candidate in ["gemini-3.8-flash", "gemini-flash-latest"]:
-                try:
-                    model = genai.GenerativeModel(candidate)
-                    break
-                except Exception:
-                    continue
-            if not model:
-                model = genai.GenerativeModel("gemini-3.8-flash")
-
-            response = model.generate_content(
-                prompt,
-                generation_config=genai.GenerationConfig(
-                    response_mime_type="application/json",
-                    response_schema=QuizGenerateResponse
+        for candidate in ["gemini-3.8-flash", "gemini-flash-latest", "gemini-2.0-flash"]:
+            try:
+                import google.generativeai as genai
+                model = genai.GenerativeModel(candidate)
+                response = model.generate_content(
+                    prompt,
+                    generation_config=genai.GenerationConfig(
+                        response_mime_type="application/json",
+                        response_schema=QuizGenerateResponse
+                    )
                 )
-            )
-            data = json.loads(response.text)
-            return QuizGenerateResponse(**data)
-        except Exception as e:
-            logger.error(f"Gemini Structured Output error: {e}")
+                data = json.loads(response.text)
+                return QuizGenerateResponse(**data)
+            except Exception as e:
+                logger.warning(f"Gemini candidate {candidate} gagal untuk quiz: {e}")
+                continue
 
     # Fallback kuis jika API Key belum aktif
     sample_page = context_chunks[0]['page_number'] if context_chunks else 1
