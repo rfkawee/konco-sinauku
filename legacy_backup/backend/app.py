@@ -15,7 +15,7 @@ CORS(app) # Izinkan frontend mengakses backend ini
 
 # Konfigurasi Gemini
 genai.configure(api_key=api_key)
-model = genai.GenerativeModel('gemini-2.5-flash') # Gunakan 1.5-flash agar lebih stabil
+model = genai.GenerativeModel('gemini-3.8-flash') # Gunakan 1.5-flash agar lebih stabil
 
 # Variabel global sementara untuk menyimpan teks (di production sebaiknya pakai database)
 pdf_content = {"text": ""}
@@ -43,7 +43,7 @@ def summarize():
         return jsonify({"error": "No PDF uploaded yet"}), 400
     
     try:
-        # Batasi konteks jika perlu, atau kirim semua (Gemini 1.5 kuat menampung banyak teks)
+        # Batasi konteks jika perlu, atau kirim semua 
         text_data = pdf_content["text"][:30000] 
         prompt = f"Buatkan ringkasan komprehensif dari teks ini:\n\n{text_data}"
         response = model.generate_content(prompt)

@@ -33,18 +33,33 @@ APP_ENV=development
 
 ---
 
-## 2. Perintah Menjalankan Aplikasi
+## 2. Menjalankan Aplikasi
 
-Jalankan backend dan frontend pada dua jendela PowerShell terpisah:
+### Opsi A: Sekali Klik (Otomatis Jalankan Backend, Frontend, & Buka Browser)
+Cukup klik ganda (double-click) file **`run.bat`** (atau `start.bat`) di folder root proyek, atau jalankan melalui terminal:
+```cmd
+run.bat
+```
+Script ini akan:
+1. Memeriksa keberadaan Python, Node.js/npm, dan file `.env`.
+2. Menjalankan backend FastAPI di port `8000`.
+3. Menjalankan frontend Vite di port `5173`.
+4. Otomatis membuka peramban web (*auto-jump to browser*) menuju `http://localhost:5173`.
+5. Untuk menghentikan semua service, tekan sembarang tombol pada jendela launcher atau jalankan `stop.bat`.
 
-### Terminal 1: Backend FastAPI (Port 8000)
+---
+
+### Opsi B: Manual (Dua Terminal Terpisah)
+Jika ingin menjalankan secara manual pada dua jendela PowerShell terpisah:
+
+#### Terminal 1: Backend FastAPI (Port 8000)
 ```powershell
 cd backend
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 *Tanda sukses:* Muncul log `Uvicorn running on http://127.0.0.1:8000` dan `Database initialized successfully`.
 
-### Terminal 2: Frontend Vite React (Port 5173)
+#### Terminal 2: Frontend Vite React (Port 5173)
 ```powershell
 $env:Path = "$env:LOCALAPPDATA\nodejs;$env:Path"
 cd frontend

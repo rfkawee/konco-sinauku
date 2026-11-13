@@ -80,7 +80,7 @@ Instruksi: Berikan jawaban akademis formal yang tepat, ringkas, dan sertakan sit
         try:
             import google.generativeai as genai
             model = None
-            for candidate in ["gemini-flash-latest", "gemini-2.0-flash", "gemini-1.5-flash"]:
+            for candidate in ["gemini-3.8-flash", "gemini-flash-latest"]:
                 try:
                     model = genai.GenerativeModel(
                         model_name=candidate,
@@ -90,7 +90,7 @@ Instruksi: Berikan jawaban akademis formal yang tepat, ringkas, dan sertakan sit
                 except Exception:
                     continue
             if not model:
-                model = genai.GenerativeModel("gemini-flash-latest", system_instruction=SYSTEM_TUTOR_PROMPT)
+                model = genai.GenerativeModel("gemini-3.8-flash", system_instruction=SYSTEM_TUTOR_PROMPT)
 
             response = model.generate_content(prompt, stream=True)
             for chunk in response:
@@ -139,14 +139,14 @@ Aturan Kuis:
 4. Tulis nomor halaman rujukan dokumen yang valid."""
 
             model = None
-            for candidate in ["gemini-flash-latest", "gemini-2.0-flash", "gemini-1.5-flash"]:
+            for candidate in ["gemini-3.8-flash", "gemini-flash-latest"]:
                 try:
                     model = genai.GenerativeModel(candidate)
                     break
                 except Exception:
                     continue
             if not model:
-                model = genai.GenerativeModel("gemini-flash-latest")
+                model = genai.GenerativeModel("gemini-3.8-flash")
 
             response = model.generate_content(
                 prompt,
