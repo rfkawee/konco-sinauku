@@ -1,28 +1,59 @@
-:root {
-  font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  color-scheme: light;
-}
+/* Hallmark · v2.0.0 · index.css */
+@import './tokens.css';
+@import './base.css';
 
-body {
-  margin: 0;
-  padding: 0;
-  background-color: #f8fafc;
-  color: #0f172a;
-  min-height: 100vh;
-}
-
-/* Custom scrollbar styling */
+/* Custom subtle scrollbar styling */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--color-paper-2);
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+  background: var(--color-rule);
+  border-radius: var(--radius-xs);
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--color-subtle);
+}
+
+/* Utilities for Paper & Ink */
+.bg-hm-paper { background-color: var(--color-paper); }
+.bg-hm-paper-2 { background-color: var(--color-paper-2); }
+.bg-hm-paper-3 { background-color: var(--color-paper-3); }
+.bg-hm-sheet { background-color: var(--color-sheet); }
+
+.text-hm-ink { color: var(--color-ink); }
+.text-hm-ink-2 { color: var(--color-ink-2); }
+.text-hm-muted { color: var(--color-muted); }
+.text-hm-subtle { color: var(--color-subtle); }
+.text-hm-accent { color: var(--color-accent); }
+
+.border-hm-rule { border-color: var(--color-rule); }
+.border-hm-rule-2 { border-color: var(--color-rule-2); }
+.border-hm-accent { border-color: var(--color-accent); }
+
+/* Keycap button style (Hallmark specialty for test/options) */
+.hm-keycap {
+  background: var(--color-sheet);
+  border: 1px solid var(--color-rule);
+  box-shadow: var(--shadow-keycap);
+  border-radius: var(--radius-sm);
+  transition: transform var(--dur-micro) var(--ease-standard),
+              box-shadow var(--dur-micro) var(--ease-standard),
+              border-color var(--dur-micro) var(--ease-standard);
+}
+
+.hm-keycap:hover:not(:disabled) {
+  border-color: var(--color-rule-2);
+}
+
+.hm-keycap:active:not(:disabled), .hm-keycap.active {
+  box-shadow: var(--shadow-keycap-pressed);
+  transform: translateY(1px);
+  border-color: var(--color-accent);
 }

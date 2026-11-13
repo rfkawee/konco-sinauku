@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Menu, LayoutDashboard, Settings, LogOut, 
-  BookOpen, Sparkles, ChevronRight, ShieldCheck, FileText
+  BookOpen, ChevronRight, ShieldCheck, FileText, Compass
 } from 'lucide-react';
 
 interface ProfileDropdownProps {
@@ -30,7 +30,6 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Tutup dropdown saat pengguna klik di luar elemen
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -47,69 +46,68 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Burger & Profile Trigger Button */}
+      {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-blue-300 px-3 py-1.5 rounded-xl transition cursor-pointer shadow-2xs group"
+        className="flex items-center gap-2.5 bg-hm-sheet hover:bg-hm-paper-2 border border-hm-rule px-2.5 py-1.5 rounded-sm transition-colors cursor-pointer select-none group"
         title="Menu Profil & Navigasi"
       >
-        <div className="w-8 h-8 rounded-full bg-linear-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+        <div className="w-7 h-7 rounded-xs bg-hm-ink text-hm-paper flex items-center justify-center font-mono font-bold text-xs">
           {userEmail.charAt(0).toUpperCase()}
         </div>
         <div className="flex flex-col text-left hidden sm:flex">
-          <span className="text-slate-800 font-bold text-xs leading-none group-hover:text-blue-600 transition truncate max-w-[140px]">
+          <span className="text-hm-ink font-display font-medium text-xs leading-none group-hover:text-hm-accent transition-colors truncate max-w-[130px]">
             {userEmail}
           </span>
-          <span className="text-[10px] text-blue-700 font-mono font-bold mt-0.5">
+          <span className="text-[10px] text-hm-muted font-mono mt-0.5">
             {memberId}
           </span>
         </div>
-        <Menu className="w-4 h-4 text-slate-500 group-hover:text-slate-800 transition ml-0.5" />
+        <Menu className="w-3.5 h-3.5 text-hm-muted group-hover:text-hm-ink transition-colors ml-0.5" />
       </button>
 
-      {/* Dropdown Menu Modal/Card */}
+      {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
-          {/* Header Profil Singkat */}
-          <div className="p-4 bg-linear-to-b from-blue-50/50 to-white border-b border-slate-100">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-md">
+        <div className="absolute right-0 mt-1.5 w-72 bg-hm-sheet rounded-sm shadow-lg border border-hm-rule-2 overflow-hidden z-50">
+          {/* Header Profil */}
+          <div className="p-3.5 bg-hm-paper-2 border-b border-hm-rule">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xs bg-hm-ink text-hm-paper flex items-center justify-center font-mono font-bold text-xs">
                 {userEmail.charAt(0).toUpperCase()}
               </div>
               <div className="overflow-hidden">
-                <p className="text-xs font-bold text-slate-900 truncate">{userEmail}</p>
-                <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-mono font-bold mt-0.5">
-                  <ShieldCheck className="w-3 h-3 text-blue-600" />
+                <p className="text-xs font-display font-semibold text-hm-ink truncate">{userEmail}</p>
+                <div className="inline-flex items-center gap-1 font-mono text-[10px] text-hm-accent mt-0.5">
+                  <ShieldCheck className="w-3 h-3" />
                   <span>{memberId}</span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-3 pt-2.5 border-t border-slate-100/80 flex items-center justify-between text-[11px] text-slate-500">
-              <span className="flex items-center gap-1 font-medium">
-                <FileText className="w-3.5 h-3.5 text-blue-600" />
-                <span>Materi Belajar:</span>
+            <div className="mt-2.5 pt-2 border-t border-hm-rule flex items-center justify-between text-[11px] text-hm-muted">
+              <span className="flex items-center gap-1 font-sans">
+                <FileText className="w-3.5 h-3.5 text-hm-accent" />
+                <span>Dokumen Tersimpan:</span>
               </span>
-              <span className="font-bold text-slate-800">{documentsCount} Dokumen</span>
+              <span className="font-mono font-semibold text-hm-ink tabular-nums">{documentsCount}</span>
             </div>
           </div>
 
           {/* Navigasi Utama */}
-          <div className="p-2 space-y-1 text-xs">
-            {/* Navigasi Workspace / Beranda */}
+          <div className="p-1.5 space-y-0.5 text-xs font-display">
             {isWorkspace && onNavigateHome && (
               <button
                 onClick={() => {
                   setIsOpen(false);
                   onNavigateHome();
                 }}
-                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-semibold transition cursor-pointer"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xs hover:bg-hm-paper-2 text-hm-ink transition-colors cursor-pointer text-left"
               >
-                <div className="flex items-center gap-2.5">
-                  <BookOpen className="w-4 h-4 text-blue-600" />
-                  <span>Halaman Beranda</span>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-hm-muted" />
+                  <span>Halaman Depan</span>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                <ChevronRight className="w-3.5 h-3.5 text-hm-subtle" />
               </button>
             )}
 
@@ -119,58 +117,56 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
                   setIsOpen(false);
                   onOpenWorkspace();
                 }}
-                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-blue-50/50 hover:bg-blue-100/60 text-blue-700 font-semibold transition cursor-pointer"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xs bg-hm-accent-soft hover:bg-hm-accent hover:text-hm-paper text-hm-accent font-semibold transition-colors cursor-pointer text-left group"
               >
-                <div className="flex items-center gap-2.5">
-                  <Sparkles className="w-4 h-4 text-blue-600" />
+                <div className="flex items-center gap-2">
+                  <Compass className="w-4 h-4 text-hm-accent group-hover:text-hm-paper" />
                   <span>Buka Ruang Belajar</span>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-blue-500" />
+                <ChevronRight className="w-3.5 h-3.5 text-hm-accent group-hover:text-hm-paper" />
               </button>
             )}
 
-            {/* Tombol Dashboard */}
             <button
               onClick={() => {
                 setIsOpen(false);
                 onOpenDashboard();
               }}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-semibold transition cursor-pointer"
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xs hover:bg-hm-paper-2 text-hm-ink transition-colors cursor-pointer text-left"
             >
-              <div className="flex items-center gap-2.5">
-                <LayoutDashboard className="w-4 h-4 text-indigo-600" />
+              <div className="flex items-center gap-2">
+                <LayoutDashboard className="w-4 h-4 text-hm-muted" />
                 <span>Dashboard Belajar</span>
               </div>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronRight className="w-3.5 h-3.5 text-hm-subtle" />
             </button>
 
-            {/* Tombol Settings */}
             <button
               onClick={() => {
                 setIsOpen(false);
                 onOpenSettings();
               }}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-semibold transition cursor-pointer"
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xs hover:bg-hm-paper-2 text-hm-ink transition-colors cursor-pointer text-left"
             >
-              <div className="flex items-center gap-2.5">
-                <Settings className="w-4 h-4 text-slate-600" />
-                <span>Pengaturan & AI</span>
+              <div className="flex items-center gap-2">
+                <Settings className="w-4 h-4 text-hm-muted" />
+                <span>Pengaturan Sistem</span>
               </div>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronRight className="w-3.5 h-3.5 text-hm-subtle" />
             </button>
           </div>
 
           {/* Tombol Logout */}
-          <div className="p-2 border-t border-slate-100 bg-slate-50/50">
+          <div className="p-1.5 border-t border-hm-rule bg-hm-paper-2">
             <button
               onClick={() => {
                 setIsOpen(false);
                 onLogout();
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+              className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xs text-xs font-display font-medium text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer text-left"
             >
-              <LogOut className="w-4 h-4" />
-              <span>Keluar dari Akun</span>
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Keluar dari Sesi</span>
             </button>
           </div>
         </div>

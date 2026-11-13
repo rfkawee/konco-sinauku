@@ -1,0 +1,83 @@
+/* Hallmark · v2.0.0 · tokens.css
+   Theme: Almanac (Scholar Modern / Reference Register)
+   Palette: Archival Slate Paper, Blue-Black Ink, Single Electric Cobalt Signal Accent
+*/
+
+:root {
+  /* --- Surfaces & Papers (OKLCH) --- */
+  --color-paper: oklch(98.2% 0.006 245);       /* Canvas ground: soft crisp archival stock */
+  --color-paper-2: oklch(95.5% 0.009 245);     /* Well / secondary panel ground */
+  --color-paper-3: oklch(92.5% 0.012 245);     /* Recessed well / hover ground */
+  --color-sheet: oklch(100% 0 0);              /* Pure white document sheet */
+
+  /* --- Inks & Typography (OKLCH) --- */
+  --color-ink: oklch(18% 0.022 250);           /* Primary ink: authoritative blue-black */
+  --color-ink-2: oklch(28% 0.018 250);         /* Secondary ink: headings & strong labels */
+  --color-muted: oklch(48% 0.014 245);         /* Tertiary / caption ink */
+  --color-subtle: oklch(64% 0.010 245);        /* Subtle timestamp / meta ink */
+
+  /* --- Hairlines & Dividers --- */
+  --color-rule: oklch(88% 0.008 245);          /* 1px hairline divider */
+  --color-rule-2: oklch(34% 0.018 250);        /* 2px firm structural bar */
+  --rule-hair: 1px;
+  --rule-bar: 2px;
+
+  /* --- Accent Signal (Restrained: < 5% footprint) --- */
+  --color-accent: oklch(48% 0.190 256);        /* Electric Cobalt / Lapis Scholar Signal */
+  --color-accent-hover: oklch(42% 0.195 256);  /* Deepened Cobalt on hover/active */
+  --color-accent-soft: oklch(95% 0.035 256);   /* Ultra-soft tint for active tags / highlights */
+  --color-accent-border: oklch(82% 0.080 256); /* Crisp border for accent chips */
+  --color-accent-ink: oklch(99% 0.005 245);    /* Contrast text on accent button */
+  --color-focus: oklch(50% 0.200 256);         /* Immediate focus ring */
+
+  /* --- Semantic Signals --- */
+  --color-success: oklch(52% 0.16 150);        /* Academic emerald */
+  --color-success-soft: oklch(96% 0.03 150);
+  --color-danger: oklch(52% 0.19 28);          /* Deep crimson alert */
+  --color-danger-soft: oklch(96% 0.03 28);
+  --color-warning: oklch(60% 0.15 75);         /* Amber notation */
+  --color-warning-soft: oklch(96% 0.04 75);
+
+  /* --- Typography Families --- */
+  --font-display: "Hanken Grotesk", "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-reading: "Newsreader", "Charter", Georgia, serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+
+  /* --- Typography Scale & Tracking --- */
+  --tracking-display: -0.025em;
+  --tracking-tight: -0.015em;
+  --display-weight: 700;
+  --heading-weight: 600;
+
+  /* --- Radii: Clean, Architectural (no oversized gummy pills) --- */
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
+
+  /* --- Spacing Scale --- */
+  --space-3xs: 2px;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 36px;
+  --space-2xl: 56px;
+  --space-3xl: 80px;
+
+  /* --- Shadows: Grounded & Crisp (never muddy gradients) --- */
+  --shadow-subtle: 0 1px 2px oklch(18% 0.02 250 / 0.05);
+  --shadow-float: 0 4px 12px oklch(18% 0.02 250 / 0.08), 0 1px 2px oklch(18% 0.02 250 / 0.04);
+  --shadow-keycap: 0 2px 0 0 oklch(80% 0.01 245), 0 3px 6px -2px oklch(18% 0.02 250 / 0.12);
+  --shadow-keycap-pressed: inset 0 1px 2px oklch(18% 0.02 250 / 0.15);
+
+  /* --- Animation Durations --- */
+  --dur-micro: 120ms;
+  --dur-short: 200ms;
+  --dur-medium: 320ms;
+  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+}

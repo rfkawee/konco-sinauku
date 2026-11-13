@@ -3,6 +3,7 @@ import { MessageSquare, FileText, Award, PanelLeftClose, PanelLeftOpen, Loader2 
 import { Navbar } from './components/Navbar';
 import { LandingPage } from './components/LandingPage';
 import { AuthModal } from './components/AuthModal';
+import { LogoutModal } from './components/LogoutModal';
 import { DashboardModal } from './components/DashboardModal';
 import { SettingsModal } from './components/SettingsModal';
 import { DocumentSidebar } from './components/DocumentSidebar';
@@ -25,10 +26,10 @@ export const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authNotice, setAuthNotice] = useState<string | null>(null);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
-  // Ambil email & Member ID dari localStorage agar sesi tidak hilang saat refresh
   const [userEmail, setUserEmail] = useState<string | null>(() => {
     return localStorage.getItem('konco_user_email') || null;
   });
@@ -36,7 +37,6 @@ export const App: React.FC = () => {
     return getMemberId();
   });
 
-  // State untuk menyimpan file sementara saat user mengunggah sebelum login
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [isAutoUploading, setIsAutoUploading] = useState(false);
   const [autoUploadFileName, setAutoUploadFileName] = useState<string>('');
@@ -58,7 +58,6 @@ export const App: React.FC = () => {
   };
 
   useEffect(() => {
-    // 1. Pulihkan sesi aktif dari Supabase (khususnya setelah redirect login Google OAuth atau reload)
     const initAuthSession = async () => {
       if (isSupabaseConfigured) {
         try {
@@ -83,8 +82,6 @@ export const App: React.FC = () => {
 
     initAuthSession();
 
-    // 2. Pasang realtime auth listener dari Supabase
-    // Ini otomatis menangkap token saat Google OAuth jump-back ke aplikasi!
     let authSub: { unsubscribe: () => void } | null = null;
     if (isSupabaseConfigured) {
       const { data } = supabase.auth.onAuthStateChange((event, session) => {
@@ -98,72 +95,83 @@ export const App: React.FC = () => {
           loadDocuments();
         } else if (event === 'SIGNED_OUT') {
           clearMemberId();
-          setMemberIdState('MBR-GUEST');
           setUserEmail(null);
+          setMemberIdState(getMemberId());
           localStorage.removeItem('konco_user_email');
-          loadDocuments();
+          setDocuments([]);
+          setActiveDoc(null);
+          setView('landing');
         }
       });
       authSub = data.subscription;
     }
 
-    loadDocuments();
-
     return () => {
-      if (authSub) {
-        authSub.unsubscribe();
-      }
+      if (authSub) authSub.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    loadDocuments();
+  }, [memberId]);
 
   const handleSelectDoc = (doc: DocumentItem) => {
     setActiveDoc(doc);
     setCurrentPage(1);
   };
 
-  const handleOpenAuth = (noticeMsg?: string) => {
-    setAuthNotice(noticeMsg || null);
-    setIsAuthOpen(true);
+  const handleJumpToPage = (pageNum: number) => {
+    setCurrentPage(pageNum);
   };
 
-  // Handler logout terpusat
+  const handleOpenWorkspace = (doc?: DocumentItem) => {
+    if (doc) {
+      setActiveDoc(doc);
+      setCurrentPage(1);
+    }
+    setView('workspace');
+  };
+
   const handleLogout = async () => {
     if (isSupabaseConfigured) {
-      try {
-        await supabase.auth.signOut();
-      } catch (err) {
-        console.error('Error signing out from Supabase:', err);
-      }
+      await supabase.auth.signOut();
     }
     clearMemberId();
-    setMemberIdState('MBR-GUEST');
-    localStorage.removeItem('konco_user_email');
     setUserEmail(null);
+    setMemberIdState(getMemberId());
+    localStorage.removeItem('konco_user_email');
+    setDocuments([]);
     setActiveDoc(null);
     setView('landing');
-    loadDocuments();
   };
 
-  // Handler saat user belum login men-drop atau memilih file di landing page
   const handleFileSelectedPreAuth = (file: File) => {
     setPendingFile(file);
     setAutoUploadFileName(file.name);
-    setAuthNotice(`File "${file.name}" siap diproses. Silakan masuk terlebih dahulu untuk langsung membuka materi di ruang belajar.`);
+    setAuthNotice(`Silakan masuk atau buat akun untuk menyimpan modul "${file.name}" ke ruang belajar Anda.`);
     setIsAuthOpen(true);
   };
 
-  // Handler saat user berhasil login
   const handleAuthSuccess = async (email: string) => {
-    const newMemberId = generateMemberId(email);
     setUserEmail(email);
-    setMemberId(newMemberId);
-    setMemberIdState(newMemberId);
     localStorage.setItem('konco_user_email', email);
+    
+    if (isSupabaseConfigured) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const newMemberId = generateMemberId(email, user.id);
+        setMemberId(newMemberId);
+        setMemberIdState(newMemberId);
+      }
+    } else {
+      const newMemberId = generateMemberId(email);
+      setMemberId(newMemberId);
+      setMemberIdState(newMemberId);
+    }
+
     setIsAuthOpen(false);
     setAuthNotice(null);
-    loadDocuments();
 
-    // Jika sebelumnya user sudah memilih/menyeret file PDF, langsung unggah secara otomatis
     if (pendingFile) {
       const fileToUpload = pendingFile;
       setPendingFile(null);
@@ -171,61 +179,47 @@ export const App: React.FC = () => {
 
       try {
         const newDoc = await uploadDocument(fileToUpload);
-        setDocuments((prev) => [newDoc, ...prev.filter((d) => d.id !== newDoc.id)]);
+        await loadDocuments();
         setActiveDoc(newDoc);
         setCurrentPage(1);
         setView('workspace');
-      } catch (err: unknown) {
-        console.error('Auto upload error:', err);
-        const msg = err instanceof Error ? err.message : 'Gagal mengunggah file PDF setelah login.';
-        alert(msg);
+      } catch (err) {
+        console.error('Gagal mengunggah file pending setelah auth:', err);
+        alert('Gagal mengunggah file PDF setelah login. Silakan coba unggah kembali.');
+        loadDocuments();
       } finally {
         setIsAutoUploading(false);
         setAutoUploadFileName('');
       }
+    } else {
+      loadDocuments();
     }
-  };
-
-  const handleUploadSuccess = (newDoc: DocumentItem) => {
-    setDocuments((prev) => [newDoc, ...prev.filter((d) => d.id !== newDoc.id)]);
-    setActiveDoc(newDoc);
-    setCurrentPage(1);
-    setView('workspace');
-  };
-
-  const handleOpenWorkspace = (doc?: DocumentItem) => {
-    if (doc) {
-      setActiveDoc(doc);
-      setCurrentPage(1);
-    } else if (documents.length > 0 && !activeDoc) {
-      setActiveDoc(documents[0]);
-    }
-    setView('workspace');
-  };
-
-  // Handler auto-jump ke halaman PDF saat user klik sitasi [Halaman X] di panel kanan
-  const handleJumpToPage = (pageNum: number) => {
-    setCurrentPage(pageNum);
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-100 font-sans">
+    <div className="h-screen flex flex-col bg-hm-paper text-hm-ink overflow-hidden font-sans">
       {view === 'landing' ? (
-        <div className="flex-1 overflow-y-auto">
-          <LandingPage
-            userEmail={userEmail}
-            memberId={memberId}
-            documents={documents}
-            onOpenAuth={handleOpenAuth}
-            onLogout={handleLogout}
-            onUploadSuccess={handleUploadSuccess}
-            onOpenWorkspace={handleOpenWorkspace}
-            onFileSelectedPreAuth={handleFileSelectedPreAuth}
-            isAutoUploading={isAutoUploading}
-            onOpenDashboard={() => setIsDashboardOpen(true)}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-          />
-        </div>
+        <LandingPage
+          userEmail={userEmail}
+          memberId={memberId}
+          documents={documents}
+          onOpenAuth={(noticeMsg) => {
+            setAuthNotice(noticeMsg || null);
+            setIsAuthOpen(true);
+          }}
+          onLogout={() => setIsLogoutModalOpen(true)}
+          onUploadSuccess={(newDoc) => {
+            loadDocuments();
+            setActiveDoc(newDoc);
+            setCurrentPage(1);
+            setView('workspace');
+          }}
+          onOpenWorkspace={handleOpenWorkspace}
+          onFileSelectedPreAuth={handleFileSelectedPreAuth}
+          isAutoUploading={isAutoUploading}
+          onOpenDashboard={() => setIsDashboardOpen(true)}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+        />
       ) : (
         <>
           {/* Navbar Workspace */}
@@ -234,7 +228,7 @@ export const App: React.FC = () => {
             userEmail={userEmail}
             memberId={memberId}
             documentsCount={documents.length}
-            onLogout={handleLogout}
+            onLogout={() => setIsLogoutModalOpen(true)}
             onBackToLanding={() => setView('landing')}
             onOpenDashboard={() => setIsDashboardOpen(true)}
             onOpenSettings={() => setIsSettingsOpen(true)}
@@ -253,53 +247,53 @@ export const App: React.FC = () => {
             )}
 
             {/* Konten Utama: Split-Screen Dual View */}
-            <main className="flex-1 flex flex-col overflow-hidden bg-white">
+            <main className="flex-1 flex flex-col overflow-hidden bg-hm-sheet">
               {/* Bar Kontrol Sub-Header */}
-              <div className="h-10 bg-slate-50 border-b border-slate-200 px-4 flex items-center justify-between text-xs shrink-0">
+              <div className="h-10 bg-hm-paper-2 border-b border-hm-rule px-4 flex items-center justify-between text-xs shrink-0 select-none">
                 <button
                   onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 font-medium cursor-pointer"
+                  className="flex items-center gap-1.5 text-hm-muted hover:text-hm-ink font-display font-medium cursor-pointer transition-colors"
                   title={isSidebarOpen ? 'Sembunyikan Sidebar' : 'Tampilkan Sidebar'}
                 >
-                  {isSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+                  {isSidebarOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeftOpen className="w-3.5 h-3.5" />}
                   <span>{isSidebarOpen ? 'Tutup Sidebar' : 'Buka Sidebar'}</span>
                 </button>
 
-                {/* Tab Selector untuk Panel Kanan */}
-                <div className="flex items-center gap-1 bg-slate-200/70 p-1 rounded-lg">
+                {/* Tab Selector untuk Panel Kanan (Hallmark Keycaps) */}
+                <div className="flex items-center gap-1 bg-hm-paper-3 p-0.5 rounded-xs border border-hm-rule">
                   <button
                     onClick={() => setActiveTab('chat')}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-semibold text-xs transition cursor-pointer ${
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-xs font-display text-xs transition-colors cursor-pointer ${
                       activeTab === 'chat'
-                        ? 'bg-white text-blue-600 shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-hm-sheet text-hm-ink font-semibold shadow-subtle border border-hm-rule'
+                        : 'text-hm-muted hover:text-hm-ink font-medium'
                     }`}
                   >
-                    <MessageSquare className="w-3.5 h-3.5" />
+                    <MessageSquare className="w-3.5 h-3.5 text-hm-accent" />
                     <span>Tanya Jawab</span>
                   </button>
 
                   <button
                     onClick={() => setActiveTab('summary')}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-semibold text-xs transition cursor-pointer ${
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-xs font-display text-xs transition-colors cursor-pointer ${
                       activeTab === 'summary'
-                        ? 'bg-white text-blue-600 shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-hm-sheet text-hm-ink font-semibold shadow-subtle border border-hm-rule'
+                        : 'text-hm-muted hover:text-hm-ink font-medium'
                     }`}
                   >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>Ringkasan</span>
+                    <FileText className="w-3.5 h-3.5 text-hm-accent" />
+                    <span>Intisari</span>
                   </button>
 
                   <button
                     onClick={() => setActiveTab('quiz')}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-semibold text-xs transition cursor-pointer ${
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-xs font-display text-xs transition-colors cursor-pointer ${
                       activeTab === 'quiz'
-                        ? 'bg-white text-blue-600 shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-hm-sheet text-hm-ink font-semibold shadow-subtle border border-hm-rule'
+                        : 'text-hm-muted hover:text-hm-ink font-medium'
                     }`}
                   >
-                    <Award className="w-3.5 h-3.5" />
+                    <Award className="w-3.5 h-3.5 text-hm-accent" />
                     <span>Kuis Evaluasi</span>
                   </button>
                 </div>
@@ -308,7 +302,7 @@ export const App: React.FC = () => {
               {/* Area Kerja Split View 50:50 */}
               <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
                 {/* Panel Kiri: In-App PDF Viewer (50%) */}
-                <div className="w-full md:w-1/2 h-1/2 md:h-full border-b md:border-b-0 md:border-r border-slate-200 overflow-hidden">
+                <div className="w-full md:w-1/2 h-1/2 md:h-full border-b md:border-b-0 md:border-r border-hm-rule overflow-hidden">
                   <PDFViewerPanel
                     document={activeDoc}
                     currentPage={currentPage}
@@ -317,7 +311,7 @@ export const App: React.FC = () => {
                 </div>
 
                 {/* Panel Kanan: 3 Modul Belajar (50%) */}
-                <div className="w-full md:w-1/2 h-1/2 md:h-full overflow-hidden bg-white">
+                <div className="w-full md:w-1/2 h-1/2 md:h-full overflow-hidden bg-hm-sheet">
                   {activeTab === 'chat' && (
                     <ChatModule
                       document={activeDoc}
@@ -357,6 +351,14 @@ export const App: React.FC = () => {
         onSuccess={handleAuthSuccess}
       />
 
+      {/* Modal Konfirmasi Logout */}
+      <LogoutModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={handleLogout}
+        userEmail={userEmail}
+      />
+
       {/* Modal Dashboard Belajar */}
       <DashboardModal
         isOpen={isDashboardOpen}
@@ -382,12 +384,12 @@ export const App: React.FC = () => {
 
       {/* Overlay Status Upload Otomatis Pasca-Login */}
       {isAutoUploading && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-white text-center">
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-slate-800 flex flex-col items-center shadow-2xl border border-slate-100">
-            <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-            <h3 className="text-base font-bold text-slate-800">Menyiapkan Ruang Belajar...</h3>
-            <p className="text-xs text-slate-500 mt-2 line-clamp-2">
-              Materi <span className="font-semibold text-blue-600">{autoUploadFileName}</span> sedang diproses dan diindeks secara otomatis.
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-hm-ink text-center">
+          <div className="bg-hm-sheet rounded-sm p-8 max-w-sm w-full text-hm-ink flex flex-col items-center shadow-xl border border-hm-rule-2">
+            <Loader2 className="w-10 h-10 text-hm-accent animate-spin mb-4" />
+            <h3 className="text-base font-display font-bold text-hm-ink">Menyiapkan Ruang Belajar...</h3>
+            <p className="text-xs text-hm-muted mt-2 font-sans line-clamp-2">
+              Modul <span className="font-semibold text-hm-ink">{autoUploadFileName}</span> sedang diekstraksi dan diindeks secara otomatis.
             </p>
           </div>
         </div>

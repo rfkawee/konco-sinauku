@@ -59,7 +59,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
 
     try {
       if (!isSupabaseConfigured) {
-        // Fallback dev mode jika Supabase belum dipasang
         localStorage.setItem('konco_user_email', cleanEmail);
         setTimeout(() => {
           setLoading(false);
@@ -85,13 +84,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           throw error;
         }
 
-        // Jika email confirmation dinonaktifkan di Supabase, session langsung terbentuk
         if (data.session && data.user) {
           localStorage.setItem('konco_user_email', data.user.email || cleanEmail);
           onSuccess(data.user.email || cleanEmail);
           onClose();
         } else if (data.user) {
-          // Jika email confirmation aktif
           setSuccessMsg('Pendaftaran berhasil! Akun Anda telah dibuat. Silakan masuk sekarang (atau periksa konfirmasi email jika diaktifkan).');
           setIsRegister(false);
           setPassword('');
@@ -129,7 +126,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   const handleGoogleLogin = async () => {
     try {
       if (!isSupabaseConfigured) {
-        // Fallback Google simulated login di dev mode
         localStorage.setItem('konco_user_email', 'pelajar.google@gmail.com');
         onSuccess('pelajar.google@gmail.com');
         onClose();
@@ -150,52 +146,53 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-hm-sheet rounded-sm max-w-md w-full shadow-xl border border-hm-rule-2 overflow-hidden select-none">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-hm-rule bg-hm-paper-2">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">
-              {isRegister ? 'Daftar Akun Konco-Sinauku' : 'Masuk ke Konco-Sinauku'}
+            <h2 className="text-base font-display font-bold text-hm-ink">
+              {isRegister ? 'Daftar Akun Belajar' : 'Masuk ke Konco-Sinauku'}
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {isRegister ? 'Buat akun untuk menyimpan modul & riwayat belajar' : 'Gunakan akun Anda untuk melanjutkan belajar'}
+            <p className="text-xs text-hm-muted mt-0.5 font-sans">
+              {isRegister ? 'Simpan materi & progres belajar secara terenkripsi' : 'Akses materi PDF dan riwayat evaluasi Anda'}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+            className="p-1 rounded-xs text-hm-muted hover:text-hm-ink hover:bg-hm-paper-3 transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="p-6">
           {notice && (
-            <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs flex items-center gap-2">
-              <Info className="w-4 h-4 shrink-0 text-blue-600" />
+            <div className="mb-4 p-3 rounded-xs bg-hm-accent-soft border border-hm-accent-border text-hm-accent text-xs flex items-center gap-2">
+              <Info className="w-4 h-4 shrink-0" />
               <span>{notice}</span>
             </div>
           )}
 
           {successMsg && (
-            <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2">
+            <div className="mb-4 p-3 rounded-xs bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs flex items-center gap-2 font-sans">
               <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
               <span>{successMsg}</span>
             </div>
           )}
 
           {errorMsg && (
-            <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+            <div className="mb-4 p-3 rounded-xs bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2 font-sans">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
               <span>{errorMsg}</span>
             </div>
           )}
 
-          {/* Tombol Login Google */}
+          {/* Tombol Google OAuth */}
           <button
             onClick={handleGoogleLogin}
             type="button"
-            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-slate-300 rounded-xl font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer text-sm shadow-xs mb-4"
+            className="hm-btn-secondary w-full text-xs py-2.5 mb-4 font-sans font-medium"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path
@@ -215,65 +212,73 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
               />
             </svg>
-            <span>Lanjutkan dengan Google</span>
+            <span>Masuk Cepat dengan Google</span>
           </button>
 
           <div className="relative flex py-2 items-center mb-4">
-            <div className="grow border-t border-slate-200"></div>
-            <span className="shrink mx-3 text-slate-400 text-xs uppercase tracking-wider font-semibold">Atau via Email</span>
-            <div className="grow border-t border-slate-200"></div>
+            <div className="grow border-t border-hm-rule"></div>
+            <span className="shrink mx-3 text-hm-subtle font-mono text-[10px] uppercase tracking-wider">
+              Atau Autentikasi Email
+            </span>
+            <div className="grow border-t border-hm-rule"></div>
           </div>
 
-          <form onSubmit={handleEmailAuth} className="space-y-3.5">
+          <form onSubmit={handleEmailAuth} className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Alamat Email</label>
+              <label className="block text-xs font-display font-medium text-hm-ink mb-1">
+                Alamat Email
+              </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <Mail className="w-3.5 h-3.5 text-hm-subtle absolute left-3 top-2.5" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="nama@sekolah.sch.id"
+                  placeholder="pelajar@institusi.ac.id"
                   required
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="w-full pl-8 pr-3 py-1.5 text-xs border border-hm-rule rounded-xs bg-hm-paper focus:bg-hm-sheet focus:border-hm-accent outline-none font-sans"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Kata Sandi</label>
+              <label className="block text-xs font-display font-medium text-hm-ink mb-1">
+                Kata Sandi
+              </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <Lock className="w-3.5 h-3.5 text-hm-subtle absolute left-3 top-2.5" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimal 6 karakter"
                   required
-                  className="w-full pl-9 pr-10 py-2 text-sm border border-slate-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="w-full pl-8 pr-9 py-1.5 text-xs border border-hm-rule rounded-xs bg-hm-paper focus:bg-hm-sheet focus:border-hm-accent outline-none font-sans"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="absolute right-2.5 top-2 text-hm-subtle hover:text-hm-ink cursor-pointer"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
 
             {isRegister && (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Ulangi Kata Sandi</label>
+                <label className="block text-xs font-display font-medium text-hm-ink mb-1">
+                  Konfirmasi Kata Sandi
+                </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <Lock className="w-3.5 h-3.5 text-hm-subtle absolute left-3 top-2.5" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Ketik ulang kata sandi Anda"
+                    placeholder="Ulangi kata sandi"
                     required
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-hm-rule rounded-xs bg-hm-paper focus:bg-hm-sheet focus:border-hm-accent outline-none font-sans"
                   />
                 </div>
               </div>
@@ -282,9 +287,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition cursor-pointer shadow-md shadow-blue-500/20 disabled:opacity-50"
+              className="hm-btn-primary w-full text-xs py-2.5 mt-2 disabled:opacity-50"
             >
-              {loading ? 'Memproses...' : isRegister ? 'Daftar Akun Baru' : 'Masuk Sekarang'}
+              {loading ? 'Memproses Autentikasi...' : isRegister ? 'Daftar Akun Baru' : 'Masuk Sekarang'}
             </button>
           </form>
 
@@ -292,9 +297,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             <button
               type="button"
               onClick={() => handleToggleMode(!isRegister)}
-              className="text-xs text-blue-600 hover:underline font-semibold cursor-pointer"
+              className="text-xs font-display text-hm-accent hover:underline cursor-pointer"
             >
-              {isRegister ? 'Sudah punya akun? Masuk di sini' : 'Belum punya akun? Buat akun gratis'}
+              {isRegister ? 'Sudah memiliki akun? Masuk di sini' : 'Belum memiliki akun? Daftar gratis'}
             </button>
           </div>
         </div>

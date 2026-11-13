@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Copy, Check, Sparkles, Loader2, BookOpen } from 'lucide-react';
+import { Copy, Check, Loader2, RefreshCw } from 'lucide-react';
 import type { DocumentItem, SummaryData } from '../types';
 import { fetchSummary } from '../lib/api';
 
@@ -45,23 +45,22 @@ export const SummaryModule: React.FC<SummaryModuleProps> = ({ document }) => {
 
   if (!document) {
     return (
-      <div className="h-full flex items-center justify-center p-8 text-center text-slate-400 text-xs">
+      <div className="h-full flex items-center justify-center p-8 text-center text-hm-muted text-xs">
         Pilih materi terlebih dahulu untuk melihat ringkasan dokumen.
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col bg-slate-50 overflow-y-auto p-4 space-y-4">
-      {/* Header Ringkasan */}
-      <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs flex items-center justify-between">
+    <div className="h-full flex flex-col bg-hm-paper overflow-y-auto p-4 md:p-5 space-y-4">
+      {/* Header Intisari */}
+      <div className="bg-hm-sheet rounded-sm p-4 border border-hm-rule flex items-center justify-between select-none">
         <div>
-          <h2 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-blue-600" />
-            <span>Intisari Materi Belajar</span>
+          <h2 className="text-sm font-display font-bold text-hm-ink flex items-center gap-2">
+            <span>Intisari & Konsep Kunci</span>
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Analisis terstruktur berdasarkan {document.page_count} halaman modul.
+          <p className="text-xs text-hm-muted mt-0.5 font-sans">
+            Materi: <span className="font-medium text-hm-ink">{document.filename}</span> (<span className="font-mono tabular-nums">{document.page_count}</span> Hal)
           </p>
         </div>
 
@@ -69,7 +68,8 @@ export const SummaryModule: React.FC<SummaryModuleProps> = ({ document }) => {
           {summaryData && (
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-medium transition cursor-pointer"
+              className="hm-btn-secondary text-xs py-1.5 px-2.5"
+              title="Salin ke Clipboard"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? 'Tersalin' : 'Salin Catatan'}</span>
@@ -79,22 +79,34 @@ export const SummaryModule: React.FC<SummaryModuleProps> = ({ document }) => {
           <button
             onClick={loadSummary}
             disabled={loading}
-            className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition cursor-pointer disabled:opacity-50"
+            className="hm-btn-primary text-xs py-1.5 px-3 disabled:opacity-50"
           >
-            {loading ? 'Menganalisis...' : 'Perbarui'}
+            {loading ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Menganalisis...</span>
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Perbarui</span>
+              </>
+            )}
           </button>
         </div>
       </div>
 
       {loading && (
-        <div className="py-16 text-center">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-2" />
-          <p className="text-xs text-slate-500 font-medium">Sedang menyusun ringkasan eksekutif & glosarium...</p>
+        <div className="py-20 text-center select-none">
+          <Loader2 className="w-7 h-7 text-hm-accent animate-spin mx-auto mb-2" />
+          <p className="text-xs text-hm-muted font-display font-medium">
+            Menganalisis dokumen secara semantik & menyusun glosarium...
+          </p>
         </div>
       )}
 
       {errorMsg && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+        <div className="p-3.5 rounded-sm bg-rose-50 border border-rose-200 text-rose-800 text-xs font-sans">
           {errorMsg}
         </div>
       )}
@@ -102,46 +114,50 @@ export const SummaryModule: React.FC<SummaryModuleProps> = ({ document }) => {
       {summaryData && !loading && (
         <>
           {/* Ringkasan Eksekutif */}
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs">
-            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-blue-600" />
+          <div className="bg-hm-sheet rounded-sm p-5 border border-hm-rule">
+            <h3 className="text-xs font-display font-bold text-hm-muted uppercase tracking-wider mb-2.5 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-hm-accent" />
               <span>Ringkasan Eksekutif</span>
             </h3>
-            <p className="text-xs text-slate-600 leading-relaxed text-justify">
+            <p className="font-reading text-[15px] text-hm-ink leading-[1.65] text-justify">
               {summaryData.executive_summary}
             </p>
           </div>
 
           {/* Poin-Poin Kunci */}
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs">
-            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Poin-Poin Inti Materi</span>
+          <div className="bg-hm-sheet rounded-sm p-5 border border-hm-rule">
+            <h3 className="text-xs font-display font-bold text-hm-muted uppercase tracking-wider mb-3 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-hm-accent" />
+              <span>Pokok Bahasan Krusial</span>
             </h3>
-            <ul className="space-y-2">
+            <div className="space-y-2.5 divide-y divide-hm-rule">
               {summaryData.key_points.map((pt, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 leading-normal">
-                  <span className="w-4 h-4 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center shrink-0 mt-0.5 text-[10px]">
-                    {idx + 1}
+                <div key={idx} className="pt-2.5 first:pt-0 flex items-start gap-3 text-xs text-hm-ink">
+                  <span className="font-mono font-bold text-[11px] text-hm-accent shrink-0 mt-0.5 tabular-nums">
+                    [{String(idx + 1).padStart(2, '0')}]
                   </span>
-                  <span>{pt}</span>
-                </li>
+                  <span className="leading-relaxed font-sans">{pt}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
 
           {/* Glosarium Istilah */}
           {Object.keys(summaryData.glossary).length > 0 && (
-            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs">
-              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
-                <span>Glosarium Istilah Teknis</span>
+            <div className="bg-hm-sheet rounded-sm p-5 border border-hm-rule">
+              <h3 className="text-xs font-display font-bold text-hm-muted uppercase tracking-wider mb-3 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-hm-accent" />
+                <span>Glosarium Istilah Ilmiah</span>
               </h3>
-              <div className="grid grid-cols-1 gap-2.5">
+              <div className="border border-hm-rule rounded-xs divide-y divide-hm-rule overflow-hidden">
                 {Object.entries(summaryData.glossary).map(([term, def], idx) => (
-                  <div key={idx} className="p-2.5 rounded-lg bg-slate-50 border border-slate-200/80">
-                    <span className="font-bold text-xs text-blue-900 block">{term}</span>
-                    <span className="text-[11px] text-slate-600 leading-snug mt-0.5 block">{def}</span>
+                  <div key={idx} className="p-3 bg-hm-sheet hover:bg-hm-paper-2 transition-colors flex flex-col md:flex-row md:items-baseline gap-1 md:gap-4">
+                    <span className="font-display font-bold text-xs text-hm-ink shrink-0 md:w-44">
+                      {term}
+                    </span>
+                    <span className="text-xs text-hm-muted font-sans leading-relaxed">
+                      {def}
+                    </span>
                   </div>
                 ))}
               </div>

@@ -3,20 +3,44 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Konco-Sinauku - AI Study Buddy & True RAG</title>
-    <meta name="description" content="Teman Belajar Cerdas Pelajar Indonesia dengan True RAG, Split-Screen PDF Viewer, dan Kuis Interaktif" />
+    <title>Konco-Sinauku · Workstation Belajar RAG Akademis</title>
+    <meta name="description" content="Platform belajar cerdas berbasis RAG dokumen asli dengan in-app PDF viewer, sitasi halaman presisi, ringkasan eksekutif, dan kuis interaktif." />
+    
+    <!-- Google Fonts: Hanken Grotesk, Newsreader, JetBrains Mono, Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400..800;1,400..800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind Config with Hallmark Tokens -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
+            fontFamily: {
+              display: ['"Hanken Grotesk"', 'system-ui', 'sans-serif'],
+              sans: ['"Inter"', 'system-ui', 'sans-serif'],
+              reading: ['"Newsreader"', 'Georgia', 'serif'],
+              mono: ['"JetBrains Mono"', 'monospace'],
+            },
             colors: {
-              brand: {
-                50: '#eff6ff',
-                100: '#dbeafe',
-                500: '#3b82f6',
-                600: '#2563eb',
-                700: '#1d4ed8',
+              hm: {
+                paper: 'var(--color-paper)',
+                'paper-2': 'var(--color-paper-2)',
+                'paper-3': 'var(--color-paper-3)',
+                sheet: 'var(--color-sheet)',
+                ink: 'var(--color-ink)',
+                'ink-2': 'var(--color-ink-2)',
+                muted: 'var(--color-muted)',
+                subtle: 'var(--color-subtle)',
+                rule: 'var(--color-rule)',
+                'rule-2': 'var(--color-rule-2)',
+                accent: 'var(--color-accent)',
+                'accent-hover': 'var(--color-accent-hover)',
+                'accent-soft': 'var(--color-accent-soft)',
+                'accent-border': 'var(--color-accent-border)',
+                'accent-ink': 'var(--color-accent-ink)',
+                focus: 'var(--color-focus)',
               }
             }
           }
@@ -24,7 +48,7 @@
       }
     </script>
   </head>
-  <body class="bg-slate-100 text-slate-800 antialiased overflow-hidden">
+  <body class="bg-hm-paper text-hm-ink antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
