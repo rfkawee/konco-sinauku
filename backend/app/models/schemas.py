@@ -22,6 +22,17 @@ class ChatMessageItem(BaseModel):
     content: str
     citations: Optional[List[int]] = []
 
+class ChatMessageResponse(BaseModel):
+    id: str
+    document_id: str
+    user_id: str
+    role: str
+    content: str
+    citations: Optional[List[int]] = []
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
 class ChatRequest(BaseModel):
     document_id: str
     question: str
@@ -88,3 +99,15 @@ class QuizSubmitResponse(BaseModel):
     percentage: int
     message: str
     details: List[QuestionResultDetail]
+
+class QuizHistoryItem(BaseModel):
+    id: str
+    document_id: str
+    user_id: str
+    topic: str
+    total_questions: int
+    score: int
+    quiz_data: Any
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

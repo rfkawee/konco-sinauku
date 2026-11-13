@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, Bookmark } from 'lucide-react';
+import { Send, Bot, User, Loader2, Bookmark, Trash2 } from 'lucide-react';
 import type { DocumentItem, ChatMessage } from '../types';
-import { sendChatStreaming } from '../lib/api';
+import { sendChatStreaming, fetchChatHistory, clearChatHistory } from '../lib/api';
 
 interface ChatModuleProps {
   document: DocumentItem | null;
@@ -22,21 +22,54 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ document, onJumpToPage }
     scrollToBottom();
   }, [messages]);
 
-  // Set greeting saat dokumen aktif berganti
+  // Muat riwayat chat dari server khusus untuk member_id aktif & dokumen ini
   useEffect(() => {
+    let isMounted = true;
     if (document) {
+      const loadHistory = async () => {
+        try {
+          const history = await fetchChatHistory(document.id);
+          if (isMounted) {
+            if (history && history.length > 0) {
+              setMessages(history);
+            } else {
+              setMessages([
+                {
+                  id: 'welcome',
+                  role: 'assistant',
+                  content: `Halo! Saya Asisten Akademis Konco-Sinauku. Dokumen **${document.filename}** (${document.page_count} halaman) telah siap dipelajari. Silakan tanyakan konsep, pembuktian rumus, atau materi apa pun yang ada pada dokumen ini.`,
+                  citations: [],
+                },
+              ]);
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching chat history:', err);
+        }
+      };
+      loadHistory();
+    } else {
+      setMessages([]);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [document?.id]);
+
+  const handleClearChat = async () => {
+    if (!document) return;
+    if (window.confirm('Bersihkan riwayat percakapan untuk materi ini?')) {
+      await clearChatHistory(document.id);
       setMessages([
         {
           id: 'welcome',
           role: 'assistant',
-          content: `Halo! Saya Asisten Akademis Konco-Sinauku. Dokumen **${document.filename}** (${document.page_count} halaman) telah siap dipelajari. Silakan tanyakan konsep, pembuktian rumus, atau materi apa pun yang ada pada dokumen ini.`,
+          content: `Riwayat percakapan telah dibersihkan. Silakan ajukan pertanyaan baru seputar dokumen **${document.filename}**.`,
           citations: [],
         },
       ]);
-    } else {
-      setMessages([]);
     }
-  }, [document?.id]);
+  };
 
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -131,6 +164,23 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ document, onJumpToPage }
 
   return (
     <div className="h-full flex flex-col bg-white">
+      {/* Sub-bar Riwayat Chat */}
+      <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs text-slate-500">
+        <span className="font-semibold text-slate-700 text-[11px] truncate max-w-[200px]">
+          Riwayat Percakapan ({messages.filter(m => m.id !== 'welcome').length} pesan)
+        </span>
+        {messages.filter(m => m.id !== 'welcome').length > 0 && (
+          <button
+            onClick={handleClearChat}
+            className="flex items-center gap-1 text-slate-400 hover:text-rose-600 transition cursor-pointer text-[11px] font-medium"
+            title="Bersihkan riwayat percakapan materi ini"
+          >
+            <Trash2 className="w-3 h-3" />
+            <span>Bersihkan Chat</span>
+          </button>
+        )}
+      </div>
+
       {/* Area Obrolan */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => {

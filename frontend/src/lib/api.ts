@@ -1,9 +1,19 @@
-import type { DocumentItem, SummaryData, QuizGenerateResponse, QuizQuestion, QuizSubmitResponse } from '../types';
+import type { DocumentItem, SummaryData, QuizGenerateResponse, QuizQuestion, QuizSubmitResponse, ChatMessage } from '../types';
+import { getMemberId } from './auth';
 
 const API_BASE = '/api';
 
+function getHeaders(extraHeaders: Record<string, string> = {}): HeadersInit {
+  return {
+    'X-Member-Id': getMemberId(),
+    ...extraHeaders,
+  };
+}
+
 export async function fetchDocuments(): Promise<DocumentItem[]> {
-  const res = await fetch(`${API_BASE}/documents`);
+  const res = await fetch(`${API_BASE}/documents`, {
+    headers: getHeaders(),
+  });
   if (!res.ok) {
     throw new Error(`Gagal memuat dokumen: ${res.statusText}`);
   }
@@ -17,6 +27,9 @@ export async function uploadDocument(file: File): Promise<DocumentItem> {
 
   const res = await fetch(`${API_BASE}/documents/upload`, {
     method: 'POST',
+    headers: {
+      'X-Member-Id': getMemberId(),
+    },
     body: formData,
   });
 
@@ -31,6 +44,7 @@ export async function uploadDocument(file: File): Promise<DocumentItem> {
 export async function deleteDocument(documentId: string): Promise<void> {
   const res = await fetch(`${API_BASE}/documents/${documentId}`, {
     method: 'DELETE',
+    headers: getHeaders(),
   });
   if (!res.ok) {
     throw new Error('Gagal menghapus dokumen.');
@@ -39,6 +53,30 @@ export async function deleteDocument(documentId: string): Promise<void> {
 
 export function getDocumentPdfUrl(documentId: string): string {
   return `${API_BASE}/documents/${documentId}/file`;
+}
+
+export async function fetchChatHistory(documentId: string): Promise<ChatMessage[]> {
+  const res = await fetch(`${API_BASE}/chat/history?document_id=${encodeURIComponent(documentId)}`, {
+    headers: getHeaders(),
+  });
+  if (!res.ok) {
+    return [];
+  }
+  const data = await res.json();
+  return data.map((item: any) => ({
+    id: item.id,
+    role: item.role,
+    content: item.content,
+    citations: item.citations || [],
+    isStreaming: false,
+  }));
+}
+
+export async function clearChatHistory(documentId: string): Promise<void> {
+  await fetch(`${API_BASE}/chat/history?document_id=${encodeURIComponent(documentId)}`, {
+    method: 'DELETE',
+    headers: getHeaders(),
+  });
 }
 
 export async function sendChatStreaming(
@@ -51,9 +89,9 @@ export async function sendChatStreaming(
   try {
     const res = await fetch(`${API_BASE}/chat`, {
       method: 'POST',
-      headers: {
+      headers: getHeaders({
         'Content-Type': 'application/json',
-      },
+      }),
       body: JSON.stringify({
         document_id: documentId,
         question: question,
@@ -111,7 +149,7 @@ export async function sendChatStreaming(
 export async function fetchSummary(documentId: string, topic?: string): Promise<SummaryData> {
   const res = await fetch(`${API_BASE}/summary`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ document_id: documentId, topic }),
   });
   if (!res.ok) {
@@ -124,7 +162,7 @@ export async function fetchSummary(documentId: string, topic?: string): Promise<
 export async function fetchQuiz(documentId: string, topic: string, numQuestions: number): Promise<QuizGenerateResponse> {
   const res = await fetch(`${API_BASE}/quiz/generate`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({
       document_id: documentId,
       topic: topic,
@@ -146,7 +184,7 @@ export async function submitQuizAnswers(
 ): Promise<QuizSubmitResponse> {
   const res = await fetch(`${API_BASE}/quiz/submit`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({
       document_id: documentId,
       topic: topic,

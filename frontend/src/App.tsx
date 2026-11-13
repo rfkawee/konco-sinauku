@@ -11,6 +11,7 @@ import { QuizModule } from './components/QuizModule';
 import type { DocumentItem } from './types';
 import { fetchDocuments, uploadDocument } from './lib/api';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { getMemberId, setMemberId, clearMemberId, generateMemberId } from './lib/auth';
 
 export const App: React.FC = () => {
   const [view, setView] = useState<'landing' | 'workspace'>('landing');
@@ -23,9 +24,12 @@ export const App: React.FC = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   
-  // Ambil email dari localStorage agar sesi tidak hilang saat refresh
+  // Ambil email & Member ID dari localStorage agar sesi tidak hilang saat refresh
   const [userEmail, setUserEmail] = useState<string | null>(() => {
     return localStorage.getItem('konco_user_email') || null;
+  });
+  const [memberId, setMemberIdState] = useState<string>(() => {
+    return getMemberId();
   });
 
   // State untuk menyimpan file sementara saat user mengunggah sebelum login
@@ -37,8 +41,12 @@ export const App: React.FC = () => {
     try {
       const docs = await fetchDocuments();
       setDocuments(docs);
-      if (docs.length > 0 && !activeDoc) {
-        setActiveDoc(docs[0]);
+      if (docs.length > 0) {
+        if (!activeDoc || !docs.some(d => d.id === activeDoc.id)) {
+          setActiveDoc(docs[0]);
+        }
+      } else {
+        setActiveDoc(null);
       }
     } catch (err) {
       console.error('Error fetching documents:', err);
@@ -56,8 +64,12 @@ export const App: React.FC = () => {
           }
           if (session?.user?.email) {
             const email = session.user.email;
+            const newMemberId = generateMemberId(email, session.user.id);
             setUserEmail(email);
+            setMemberId(newMemberId);
+            setMemberIdState(newMemberId);
             localStorage.setItem('konco_user_email', email);
+            loadDocuments();
           }
         } catch (err) {
           console.error('Failed to init auth session:', err);
@@ -74,11 +86,18 @@ export const App: React.FC = () => {
       const { data } = supabase.auth.onAuthStateChange((event, session) => {
         if (session?.user?.email) {
           const email = session.user.email;
+          const newMemberId = generateMemberId(email, session.user.id);
           setUserEmail(email);
+          setMemberId(newMemberId);
+          setMemberIdState(newMemberId);
           localStorage.setItem('konco_user_email', email);
+          loadDocuments();
         } else if (event === 'SIGNED_OUT') {
+          clearMemberId();
+          setMemberIdState('MBR-GUEST');
           setUserEmail(null);
           localStorage.removeItem('konco_user_email');
+          loadDocuments();
         }
       });
       authSub = data.subscription;
@@ -112,9 +131,13 @@ export const App: React.FC = () => {
         console.error('Error signing out from Supabase:', err);
       }
     }
+    clearMemberId();
+    setMemberIdState('MBR-GUEST');
     localStorage.removeItem('konco_user_email');
     setUserEmail(null);
+    setActiveDoc(null);
     setView('landing');
+    loadDocuments();
   };
 
   // Handler saat user belum login men-drop atau memilih file di landing page
@@ -127,10 +150,14 @@ export const App: React.FC = () => {
 
   // Handler saat user berhasil login
   const handleAuthSuccess = async (email: string) => {
+    const newMemberId = generateMemberId(email);
     setUserEmail(email);
+    setMemberId(newMemberId);
+    setMemberIdState(newMemberId);
     localStorage.setItem('konco_user_email', email);
     setIsAuthOpen(false);
     setAuthNotice(null);
+    loadDocuments();
 
     // Jika sebelumnya user sudah memilih/menyeret file PDF, langsung unggah secara otomatis
     if (pendingFile) {
@@ -183,6 +210,7 @@ export const App: React.FC = () => {
         <div className="flex-1 overflow-y-auto">
           <LandingPage
             userEmail={userEmail}
+            memberId={memberId}
             documents={documents}
             onOpenAuth={handleOpenAuth}
             onLogout={handleLogout}
@@ -198,6 +226,7 @@ export const App: React.FC = () => {
           <Navbar
             activeDoc={activeDoc}
             userEmail={userEmail}
+            memberId={memberId}
             onLogout={handleLogout}
             onBackToLanding={() => setView('landing')}
           />

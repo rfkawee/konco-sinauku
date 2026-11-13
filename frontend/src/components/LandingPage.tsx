@@ -8,6 +8,7 @@ import { uploadDocument } from '../lib/api';
 
 interface LandingPageProps {
   userEmail: string | null;
+  memberId?: string;
   documents: DocumentItem[];
   onOpenAuth: (customMessage?: string) => void;
   onLogout: () => void;
@@ -19,6 +20,7 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   userEmail,
+  memberId,
   documents,
   onOpenAuth,
   onLogout,
@@ -121,7 +123,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
                 {userEmail.charAt(0).toUpperCase()}
               </div>
-              <span className="text-slate-700 font-semibold text-xs hidden md:inline">{userEmail}</span>
+              <div className="flex flex-col text-left hidden sm:flex">
+                <span className="text-slate-700 font-semibold text-xs leading-none">{userEmail}</span>
+                {memberId && (
+                  <span className="text-[10px] text-blue-700 font-mono font-bold mt-0.5">
+                    ID: {memberId}
+                  </span>
+                )}
+              </div>
               {documents.length > 0 && (
                 <button
                   onClick={() => onOpenWorkspace()}

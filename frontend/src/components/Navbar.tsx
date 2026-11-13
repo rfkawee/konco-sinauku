@@ -5,6 +5,7 @@ import type { DocumentItem } from '../types';
 interface NavbarProps {
   activeDoc: DocumentItem | null;
   userEmail?: string | null;
+  memberId?: string;
   onLogout?: () => void;
   onBackToLanding?: () => void;
 }
@@ -12,6 +13,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   activeDoc,
   userEmail,
+  memberId,
   onLogout,
   onBackToLanding,
 }) => {
@@ -62,11 +64,18 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Info Akun jika sudah Login (Tombol login telah dihapus dari navbar utama sesuai spesifikasi) */}
         {userEmail && (
-          <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-sm">
-            <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
+          <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-sm shadow-2xs">
+            <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-2xs">
               {userEmail.charAt(0).toUpperCase()}
             </div>
-            <span className="text-slate-700 font-medium text-xs hidden md:inline">{userEmail}</span>
+            <div className="flex flex-col text-left hidden sm:flex">
+              <span className="text-slate-700 font-semibold text-xs leading-none">{userEmail}</span>
+              {memberId && (
+                <span className="text-[10px] text-blue-700 font-mono font-bold mt-0.5">
+                  ID: {memberId}
+                </span>
+              )}
+            </div>
             <button
               onClick={onLogout}
               className="text-xs text-rose-600 hover:text-rose-700 font-medium ml-1 cursor-pointer"
