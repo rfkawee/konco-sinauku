@@ -8,7 +8,25 @@ from app.models.schemas import QuizGenerateResponse, QuizQuestion
 
 logger = logging.getLogger(__name__)
 
-# Coba inisialisasi Google GenAI SDK
+def get_openrouter_client() -> Optional[Any]:
+    """Menginisialisasi OpenAI client yang terhubung ke OpenRouter API."""
+    if not settings.OPENROUTER_API_KEY:
+        return None
+    try:
+        from openai import OpenAI
+        return OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=settings.OPENROUTER_API_KEY,
+            default_headers={
+                "HTTP-Referer": "http://localhost:5173",
+                "X-Title": "Konco-Sinauku"
+            }
+        )
+    except Exception as e:
+        logger.warning(f"Gagal menginisialisasi OpenRouter client: {e}")
+        return None
+
+# Coba inisialisasi Google GenAI SDK (untuk Embedding & Secondary Fallback)
 genai_available = False
 try:
     if settings.GEMINI_API_KEY:
@@ -76,6 +94,38 @@ Pertanyaan Siswa: {question}
 
 Instruksi: Berikan jawaban akademis formal yang tepat, ringkas, dan sertakan sitasi [Halaman X] untuk fakta yang bersangkutan."""
 
+    # 1. Prioritas Utama: OpenRouter Streaming (Model Free tanpa batasan ketat)
+    or_client = get_openrouter_client()
+    if or_client:
+        for model_name in [settings.OPENROUTER_MODEL, "openrouter/free", "google/gemma-4-31b-it:free"]:
+            try:
+                messages = [
+                    {"role": "system", "content": SYSTEM_TUTOR_PROMPT},
+                ]
+                if history:
+                    for h in history[-6:]:
+                        role = "assistant" if h.get("role") == "assistant" else "user"
+                        messages.append({"role": role, "content": h.get("content", "")})
+                messages.append({"role": "user", "content": prompt})
+
+                stream = or_client.chat.completions.create(
+                    model=model_name,
+                    messages=messages,
+                    stream=True,
+                    temperature=0.3
+                )
+                has_yielded = False
+                for chunk in stream:
+                    if chunk.choices and chunk.choices[0].delta.content:
+                        has_yielded = True
+                        yield chunk.choices[0].delta.content
+                if has_yielded:
+                    return
+            except Exception as e:
+                logger.warning(f"OpenRouter chat model {model_name} gagal: {e}, mencoba alternatif...")
+                continue
+
+    # 2. Prioritas Kedua: Google Gemini Fallback
     if genai_available and settings.GEMINI_API_KEY:
         for candidate in ["gemini-3.8-flash", "gemini-flash-latest", "gemini-2.0-flash"]:
             try:
@@ -118,8 +168,7 @@ def generate_structured_quiz(
         for c in context_chunks[:15]
     ])
 
-    if genai_available and settings.GEMINI_API_KEY:
-        prompt = f"""Buatkan {num_questions} butir soal pilihan ganda akademis berdasarkan materi berikut:
+    prompt = f"""Buatkan {num_questions} butir soal pilihan ganda akademis berdasarkan materi berikut:
 Topik: {topic}
 
 Konteks Dokumen:
@@ -130,6 +179,67 @@ Aturan Kuis:
 2. Berikan kunci jawaban yang tepat ('A', 'B', 'C', atau 'D').
 3. Berikan analisis akademis mendalam mengapa jawaban tersebut benar dan mengapa opsi lain salah.
 4. Tulis nomor halaman rujukan dokumen yang valid."""
+
+    # 1. Prioritas Utama: OpenRouter JSON Structured Quiz
+    or_client = get_openrouter_client()
+    if or_client:
+        for model_name in [settings.OPENROUTER_MODEL, "openrouter/free", "google/gemma-4-31b-it:free"]:
+            try:
+                system_quiz = (
+                    "Anda adalah Quiz & Assessment Master. Buat kuis pilihan ganda akademis berdasarkan materi teks. "
+                    "Kembalikan HANYA JSON murni yang sesuai dengan skema: "
+                    '{"topic": string, "total_questions": int, "questions": [{"id": int, "question": string, "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "correct_answer": "A"|"B"|"C"|"D", "explanation": string, "relevant_page": int}]}'
+                )
+                res = or_client.chat.completions.create(
+                    model=model_name,
+                    response_format={"type": "json_object"},
+                    messages=[
+                        {"role": "system", "content": system_quiz},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.2
+                )
+                raw_text = res.choices[0].message.content or "{}"
+                data = json.loads(raw_text)
+                if isinstance(data, list):
+                    data = {"topic": topic, "total_questions": len(data), "questions": data}
+                elif "questions" not in data and "quiz" in data:
+                    data["questions"] = data["quiz"]
+                if "topic" not in data:
+                    data["topic"] = topic
+                if "total_questions" not in data:
+                    data["total_questions"] = len(data.get("questions", []))
+                
+                # Standarisasi opsi format A., B., C., D.
+                for idx, q in enumerate(data.get("questions", [])):
+                    if "id" not in q:
+                        q["id"] = idx + 1
+                    opts = q.get("options", [])
+                    formatted_opts = []
+                    prefixes = ["A. ", "B. ", "C. ", "D. "]
+                    for i, opt in enumerate(opts[:4]):
+                        opt_str = str(opt).strip()
+                        if not any(opt_str.startswith(p) for p in ["A.", "B.", "C.", "D."]):
+                            formatted_opts.append(f"{prefixes[i]}{opt_str}")
+                        else:
+                            formatted_opts.append(opt_str)
+                    # Pastikan minimal 4 opsi
+                    while len(formatted_opts) < 4:
+                        formatted_opts.append(f"{prefixes[len(formatted_opts)]}Opsi pelengkap.")
+                    q["options"] = formatted_opts
+                    if not q.get("correct_answer") or q["correct_answer"] not in ["A", "B", "C", "D"]:
+                        q["correct_answer"] = "A"
+                    if not q.get("relevant_page"):
+                        q["relevant_page"] = context_chunks[0]["page_number"] if context_chunks else 1
+
+                if data.get("questions"):
+                    return QuizGenerateResponse(**data)
+            except Exception as e:
+                logger.warning(f"OpenRouter quiz model {model_name} gagal: {e}, mencoba berikutnya...")
+                continue
+
+    # 2. Prioritas Kedua: Google Gemini Structured Output
+    if genai_available and settings.GEMINI_API_KEY:
 
         for candidate in ["gemini-3.8-flash", "gemini-flash-latest", "gemini-2.0-flash"]:
             try:

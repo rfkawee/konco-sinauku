@@ -29,6 +29,55 @@ def get_summary(req: SummaryRequest, db: Session = Depends(get_db)):
     key_points = []
     glossary = {}
 
+    # 1. Prioritas Utama: OpenRouter JSON Summary
+    if settings.OPENROUTER_API_KEY:
+        try:
+            from openai import OpenAI
+            or_client = OpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=settings.OPENROUTER_API_KEY,
+                default_headers={
+                    "HTTP-Referer": "http://localhost:5173",
+                    "X-Title": "Konco-Sinauku"
+                }
+            )
+            prompt_or = f"""Buatkan telaah materi pembelajaran terstruktur dalam format JSON murni:
+Dokumen: {doc.filename}
+Topik Spesifik: {req.topic or 'Seluruh Materi'}
+
+Konteks Materi:
+{combined_context[:15000]}
+
+Format JSON Wajib:
+{{
+  "executive_summary": "1-2 paragraf ringkasan eksekutif padat...",
+  "key_points": ["Poin 1...", "Poin 2...", "Poin 3..."],
+  "glossary": {{"Istilah 1": "Definisi...", "Istilah 2": "Definisi..."}}
+}}"""
+            res = or_client.chat.completions.create(
+                model=settings.OPENROUTER_MODEL,
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": "Anda adalah Asisten Akademis Formal. Selalu keluarkan JSON murni sesuai skema yang diminta."},
+                    {"role": "user", "content": prompt_or}
+                ],
+                temperature=0.3
+            )
+            raw = res.choices[0].message.content or "{}"
+            data = json.loads(raw)
+            if isinstance(data, list) and len(data) > 0:
+                data = data[0]
+            if "executive_summary" in data:
+                return SummaryResponse(
+                    document_id=req.document_id,
+                    executive_summary=data.get("executive_summary", ""),
+                    key_points=data.get("key_points", []),
+                    glossary=data.get("glossary", {})
+                )
+        except Exception as e:
+            logger.warning(f"OpenRouter summary gagal: {e}, mencoba fallback Gemini...")
+
+    # 2. Prioritas Kedua: Gemini Fallback
     if settings.GEMINI_API_KEY:
         try:
             import google.generativeai as genai

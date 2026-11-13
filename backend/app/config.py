@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     
     # Gemini API
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+
+    # OpenRouter API
+    OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
+    OPENROUTER_MODEL: str = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free")
     
     # Database URL: default ke SQLite lokal jika PostgreSQL belum dikonfigurasi
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./konco_sinauku.db")

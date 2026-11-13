@@ -94,7 +94,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </h4>
             <div className="flex items-center justify-between py-1 border-b border-slate-200/60">
               <span className="text-slate-500">Model Generasi:</span>
-              <span className="font-mono font-semibold text-indigo-700">gemini-3.8-flash</span>
+              <span className="font-mono font-semibold text-indigo-700">OpenRouter (Free) / Gemini 3.8</span>
             </div>
             <div className="flex items-center justify-between py-1 border-b border-slate-200/60">
               <span className="text-slate-500">Model Embedding:</span>
