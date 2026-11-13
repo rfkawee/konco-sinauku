@@ -45,7 +45,16 @@ Format JSON Wajib:
   "key_points": ["Poin 1...", "Poin 2...", "Poin 3..."],
   "glossary": {{"Istilah 1": "Definisi...", "Istilah 2": "Definisi..."}}
 }}"""
-            model = genai.GenerativeModel("gemini-2.0-flash")
+            model = None
+            for candidate in ["gemini-3.8-flash", "gemini-flash-latest"]:
+                try:
+                    model = genai.GenerativeModel(candidate)
+                    break
+                except Exception:
+                    continue
+            if not model:
+                model = genai.GenerativeModel("gemini-3.8-flash")
+
             res = model.generate_content(
                 prompt,
                 generation_config={"response_mime_type": "application/json"}
